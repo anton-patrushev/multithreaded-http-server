@@ -168,8 +168,16 @@ DWORD WINAPI ServerListener::requestHandler(CONST LPVOID parameter)
     }
 
     buffer[receieveStatus] = 0;
+    EnterCriticalSection(printSection);
     std::cout << "Socket " << acceptedSocket << " -> received " << receieveStatus << "bytes" << std::endl;
+    // std::cout << "Request" << buffer << std::endl;
+    LeaveCriticalSection(printSection);
 
+    // parse received buffer (extract headers, body, url, queryString and etc.)
+
+    // perform action depends on url (+ body, queryString)
+
+    // send response
     Sleep(3000);
     int sendStatus = requestWorker.sendHTMLResponse(acceptedSocket);
   }
