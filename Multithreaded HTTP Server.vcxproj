@@ -18,6 +18,32 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\classes\db\DBWorker.cpp" />
+    <ClCompile Include="src\classes\Handler\Handler.cpp" />
+    <ClCompile Include="src\classes\Request\RequestHandler.cpp" />
+    <ClCompile Include="src\classes\Request\RequestParser.cpp" />
+    <ClCompile Include="src\classes\Server\ServerListener.cpp" />
+    <ClCompile Include="src\helpers\sqlite3.c" />
+    <ClCompile Include="src\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\classes\db\DBWorker.hpp" />
+    <ClInclude Include="src\classes\Handler\Handler.hpp" />
+    <ClInclude Include="src\classes\Handler\init.hpp" />
+    <ClInclude Include="src\classes\Handler\routes.hpp" />
+    <ClInclude Include="src\classes\Request\RequestHandler.hpp" />
+    <ClInclude Include="src\classes\Request\RequestParser.hpp" />
+    <ClInclude Include="src\classes\Response\FailureResponse.hpp" />
+    <ClInclude Include="src\classes\Response\Response.hpp" />
+    <ClInclude Include="src\classes\Response\SuccessResponse.hpp" />
+    <ClInclude Include="src\classes\Server\ServerListener.hpp" />
+    <ClInclude Include="src\helpers\cleanup.hpp" />
+    <ClInclude Include="src\helpers\constants.hpp" />
+    <ClInclude Include="src\helpers\init.hpp" />
+    <ClInclude Include="src\helpers\json.hpp" />
+    <ClInclude Include="src\helpers\sqlite3.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{53297E0D-E929-4383-98D7-B6CCAFD5DE1C}</ProjectGuid>
@@ -137,15 +163,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="RequestWorker.cpp" />
-    <ClCompile Include="ServerListener.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="RequestWorker.h" />
-    <ClInclude Include="ServerListener.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
