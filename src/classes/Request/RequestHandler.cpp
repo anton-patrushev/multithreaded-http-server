@@ -1,59 +1,116 @@
 #include "./RequestHandler.hpp"
 
-/**
- * @todo parse queryString params & store them (maybe as JSON)
-*/
-
-RequestHandler::RequestHandler(std::string rawRequest, CRITICAL_SECTION *printSectionPointer)
+RequestHandler::RequestHandler(std::string rawRequest, SOCKET acceptedSocket, CRITICAL_SECTION *printSectionPointer)
     : _parser(rawRequest, printSectionPointer)
 {
+  this->_socket = acceptedSocket;
   this->_printingSectionPointer = printSectionPointer;
-  this->setPath();
-
-  // parseQueryParams
+  this->setKey();
 }
 
-void RequestHandler::setPath() { this->convertUrlToPath(this->_parser.getUrl()); }
+void RequestHandler::setKey()
+{
+  this->_key = this->_parser.getUrl();
+  if (this->_key.find_last_of("/") != this->_key.size() - 1)
+    this->_key.append("/");
+
+  this->_key.append("_");
+  this->_key.append(std::to_string(this->_parser.getRequestType()));
+}
+
 void RequestHandler::enterPrintSection() { EnterCriticalSection(this->_printingSectionPointer); }
 void RequestHandler::leavePrintSection() { LeaveCriticalSection(this->_printingSectionPointer); }
 
-void RequestHandler::convertUrlToPath(std::string url)
-{
-  std::stringstream ss(url);
-  std::string token;
-
-  while (std::getline(ss, token, '/'))
-  {
-    int questionCharPosition = 0;
-    questionCharPosition = token.find('?', 0);
-    if (questionCharPosition != std::string::npos)
-    {
-      token = token.substr(0, questionCharPosition);
-    }
-
-    token.append("_");
-    token.append(std::to_string(constants::NOT_FINAL_ROUTE));
-
-    //append to path http_method with key
-    this->_path.push_back(token);
-  }
-
-  token = this->_path[this->_path.size() - 1];
-
-  token = token.substr(0, token.find('_', 0));
-  token.append("_");
-  token.append(std::to_string(this->_parser.getRequestType()));
-
-  this->_path[this->_path.size() - 1] = token;
-}
-
 int RequestHandler::handleRequest()
 {
-  for (int index = 0; index < this->_path.size(); ++index)
+  if (this->_key == constants::routes::login)
+    return this->loginUser(json());
+
+  if (this->_key == constants::routes::signUp)
+    return this->registerUser(json());
+
+  if (this->_key == constants::routes::getTasks)
+    return this->getTasks(json());
+
+  if (this->_key == constants::routes::createTask)
+    return this->createTask(json());
+
+  if (this->_key == constants::routes::updateTask)
+    return this->updateTask(json());
+
+  if (this->_key == constants::routes::deleteTasks)
+    return this->deleteTasks(json());
+
+  return this->defaultHandler();
+};
+
+int RequestHandler::defaultHandler()
+{
+  return this->sendResponse(false);
+}
+
+int RequestHandler::sendResponse(bool success)
+{
+  if (success)
   {
-    std::string route = this->_path[index];
+    SuccessResponse response(this->_printingSectionPointer);
+    return response.sendResponse(this->_socket);
   }
 
-  // this->sendResponse();
-  return 0; //success code
+  FailureResponse response(this->_printingSectionPointer);
+  return response.sendResponse(this->_socket);
+}
+
+int RequestHandler::sendResponse(bool success, json res)
+{
+  // use Response class to return value with json content
+  return 0;
+}
+
+int RequestHandler::loginUser(json req)
+{
+  this->enterPrintSection();
+  std::cout << "login handler" << std::endl;
+  this->leavePrintSection();
+  return 0;
+}
+
+int RequestHandler::registerUser(json req)
+{
+  this->enterPrintSection();
+  std::cout << "register handler" << std::endl;
+  this->leavePrintSection();
+  return 0;
+}
+
+int RequestHandler::getTasks(json req)
+{
+  this->enterPrintSection();
+  std::cout << "get tasks handler" << std::endl;
+  this->leavePrintSection();
+  return 0;
+}
+
+int RequestHandler::createTask(json req)
+{
+  this->enterPrintSection();
+  std::cout << "create task handler" << std::endl;
+  this->leavePrintSection();
+  return 0;
+}
+
+int RequestHandler::updateTask(json req)
+{
+  this->enterPrintSection();
+  std::cout << "update task handler" << std::endl;
+  this->leavePrintSection();
+  return 0;
+}
+
+int RequestHandler::deleteTasks(json req)
+{
+  this->enterPrintSection();
+  std::cout << "delete tasks handler" << std::endl;
+  this->leavePrintSection();
+  return 0;
 }

@@ -1,12 +1,12 @@
-#pragma once
-#pragma comment(lib, "ws2_32.lib")
+#ifndef REQUEST_PARSER_HPP
+#define REQUEST_PARSER_HPP
 
-#include <WS2tcpip.h>
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <regex>
+#include <windows.h>
 
 #include "../../helpers/json.hpp" // C++ JSON
 #include "../../helpers/constants.hpp"
@@ -30,13 +30,12 @@ class RequestParser
   void enterPrintSection();
   void leavePrintSection();
   void parseRequest();
-  std::string getHTMLResponse(std::string fileName = "index.html");
 
 public:
   RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer);
-  int sendResponse(SOCKET acceptedSocket, std::string response);
-  int sendHTMLResponse(SOCKET acceptedSocket, std::string fileName = "index.html");
 
   std::string getUrl();
   int getRequestType();
 };
+
+#endif //REQUEST_PARSER_HPP

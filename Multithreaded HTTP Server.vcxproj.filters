@@ -15,25 +15,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\helpers\sqlite3.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\classes\Server\ServerListener.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\classes\Request\RequestHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\classes\Request\RequestParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\classes\db\DBWorker.cpp">
+    <ClCompile Include="src\classes\Response\Response.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\classes\Server\ServerListener.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\helpers\sqlite3.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\classes\Handler\Handler.cpp">
+    <ClCompile Include="src\classes\Response\FailureResponse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\classes\Response\SuccessResponse.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,10 +44,7 @@
     <ClInclude Include="src\helpers\json.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\helpers\sqlite3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\classes\Server\ServerListener.hpp">
+    <ClInclude Include="src\helpers\constants.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\classes\Request\RequestHandler.hpp">
@@ -53,34 +53,19 @@
     <ClInclude Include="src\classes\Request\RequestParser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\classes\db\DBWorker.hpp">
+    <ClInclude Include="src\classes\Response\Response.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\classes\Server\ServerListener.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\helpers\sqlite3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\classes\Response\FailureResponse.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\classes\Response\Response.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\classes\Response\SuccessResponse.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\helpers\cleanup.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\classes\Handler\init.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\classes\Handler\routes.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\helpers\constants.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\helpers\init.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\classes\Handler\Handler.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

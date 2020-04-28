@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SERVER_LISTENER_HPP
+#define SERVER_LISTENER_HPP
+
 #pragma comment(lib, "ws2_32.lib")
 
 #include <WS2tcpip.h>
@@ -9,7 +11,9 @@
 #include <functional>
 
 // request helpers container
+#ifndef REQUEST_HANDLER_HPP
 #include "../Request/RequestHandler.hpp"
+#endif
 
 struct RequestHandlerParameter
 {
@@ -35,3 +39,5 @@ public:
   ServerListener(int port = 8080, const char *ipAddress = "127.0.0.1");
   int run();
 };
+
+#endif //SERVER_LISTENER_HPP

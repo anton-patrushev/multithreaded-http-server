@@ -1,5 +1,9 @@
 #include "./RequestParser.hpp"
 
+/**
+ * @todo parse queryString params & store them (maybe as JSON)
+*/
+
 RequestParser::RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer)
 {
   this->_rawRequest = rawRequest;
@@ -48,25 +52,25 @@ void RequestParser::setRequestType(std::string httpMethod)
 
   if (httpMethod.compare("GET") == 0)
   {
-    this->_requestType = constants::GET_HTTP;
+    this->_requestType = constants::http::GET_HTTP;
     return;
   }
 
   if (httpMethod.compare("POST") == 0)
   {
-    this->_requestType = constants::POST_HTTP;
+    this->_requestType = constants::http::POST_HTTP;
     return;
   }
 
   if (httpMethod.compare("PATCH") == 0)
   {
-    this->_requestType = constants::PATCH_HTTP;
+    this->_requestType = constants::http::PATCH_HTTP;
     return;
   }
 
   if (httpMethod.compare("DELETE") == 0)
   {
-    this->_requestType = constants::DELETE_HTTP;
+    this->_requestType = constants::http::DELETE_HTTP;
     return;
   }
 
@@ -103,49 +107,34 @@ void RequestParser::parseUrl()
 std::string RequestParser::getUrl() { return this->_url; }
 int RequestParser::getRequestType() { return this->_requestType; }
 
-std::string RequestParser::getHTMLResponse(std::string fileName)
-{
-  int statusCode = 200;
-  std::string content;
-  // set relative from project root
-  std::ifstream file("./src/html/index.html");
+// std::string RequestParser::getHTMLResponse(std::string fileName)
+// {
+//   int statusCode = 200;
+//   std::string content;
+//   // set relative from project root
+//   std::ifstream file("./src/html/index.html");
 
-  if (file.good())
-  {
-    std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    content = str;
-    statusCode = 200;
-  }
+//   if (file.good())
+//   {
+//     std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+//     content = str;
+//     statusCode = 200;
+//   }
 
-  file.close();
+//   file.close();
 
-  std::ostringstream oss;
-  oss << "HTTP/1.1 " << statusCode << " OK\r\n";
-  oss << "Cache-Control: no-cache, private\r\n";
-  oss << "Content-Type: text/html\r\n";
-  oss << "Content-Length: " << content.size() << "\r\n";
-  oss << "\r\n";
-  oss << content;
+//   std::ostringstream oss;
+//   oss << "HTTP/1.1 " << statusCode << " OK\r\n";
+//   oss << "Cache-Control: no-cache, private\r\n";
+//   oss << "Content-Type: text/html\r\n";
+//   oss << "Content-Length: " << content.size() << "\r\n";
+//   oss << "\r\n";
+//   oss << content;
 
-  return oss.str();
-}
+//   return oss.str();
+// }
 
-int RequestParser::sendResponse(SOCKET acceptedSocket, std::string response)
-{
-  const int sendStatus = send(acceptedSocket, response.c_str(), response.size(), 0);
-  if (sendStatus == SOCKET_ERROR)
-  {
-    std::cout << "sending error -> " << WSAGetLastError() << std::endl;
-    closesocket(acceptedSocket);
-    return sendStatus;
-  }
-
-  std::cout << sendStatus << " bytes was successfully sended" << std::endl;
-  std::cout << std::endl;
-  return 0;
-}
-
-int RequestParser::sendHTMLResponse(SOCKET acceptedSocket, std::string fileName)
-{
-  return this->sendResponse(acceptedSocket, this->getHTMLResponse(fileName));
-}
+// int RequestParser::sendHTMLResponse(SOCKET acceptedSocket, std::string fileName)
+// {
+//   return this->sendResponse(acceptedSocket, this->getHTMLResponse(fileName));
+// }

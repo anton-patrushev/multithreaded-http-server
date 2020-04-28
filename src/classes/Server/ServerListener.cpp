@@ -1,5 +1,3 @@
-#pragma once
-
 #include "./ServerListener.hpp"
 
 ServerListener::ServerListener(int port, const char *ipAdress)
@@ -162,7 +160,7 @@ DWORD WINAPI ServerListener::requestHandler(CONST LPVOID parameter)
       EnterCriticalSection(printSection);
       std::cout << "connection is closed" << std::endl;
       LeaveCriticalSection(printSection);
-      break;
+      break; // close socket and exit thread
     }
 
     buffer[receieveStatus] = 0;
@@ -172,11 +170,14 @@ DWORD WINAPI ServerListener::requestHandler(CONST LPVOID parameter)
 
     // parse received buffer (extract headers, body, url, queryString and etc.)
 
-    RequestHandler handler(buffer, printSection);
-    // perform action depends on url (+ body, queryString)
-
-    // send response
-    // int sendStatus = requestParser.sendHTMLResponse(acceptedSocket);
+    RequestHandler handler(buffer, acceptedSocket, printSection);
+    int handleStatus = handler.handleRequest();
+    if (handleStatus != 0)
+    {
+      EnterCriticalSection(printSection);
+      std::cout << "handling request failed" << std::endl;
+      LeaveCriticalSection(printSection);
+    }
   }
 
   closesocket(acceptedSocket);
