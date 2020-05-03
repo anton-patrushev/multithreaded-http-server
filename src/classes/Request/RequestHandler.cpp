@@ -5,12 +5,14 @@ RequestHandler::RequestHandler(std::string rawRequest, SOCKET acceptedSocket, CR
 {
   this->_socket = acceptedSocket;
   this->_printingSectionPointer = printSectionPointer;
-  this->setKey();
+  this->setKey(); // called after parser initialization
 }
 
 void RequestHandler::setKey()
 {
   this->_key = this->_parser.getUrl();
+
+  // verify key for certain format
   if (this->_key.find_last_of("/") != this->_key.size() - 1)
     this->_key.append("/");
 
@@ -72,7 +74,8 @@ int RequestHandler::loginUser(json req)
   this->enterPrintSection();
   std::cout << "login handler" << std::endl;
   this->leavePrintSection();
-  return 0;
+
+  return this->sendResponse(true);
 }
 
 int RequestHandler::registerUser(json req)
@@ -80,7 +83,8 @@ int RequestHandler::registerUser(json req)
   this->enterPrintSection();
   std::cout << "register handler" << std::endl;
   this->leavePrintSection();
-  return 0;
+
+  return this->sendResponse(true);
 }
 
 int RequestHandler::getTasks(json req)
@@ -88,7 +92,8 @@ int RequestHandler::getTasks(json req)
   this->enterPrintSection();
   std::cout << "get tasks handler" << std::endl;
   this->leavePrintSection();
-  return 0;
+
+  return this->sendResponse(true);
 }
 
 int RequestHandler::createTask(json req)
@@ -96,7 +101,8 @@ int RequestHandler::createTask(json req)
   this->enterPrintSection();
   std::cout << "create task handler" << std::endl;
   this->leavePrintSection();
-  return 0;
+
+  return this->sendResponse(true);
 }
 
 int RequestHandler::updateTask(json req)
@@ -104,7 +110,8 @@ int RequestHandler::updateTask(json req)
   this->enterPrintSection();
   std::cout << "update task handler" << std::endl;
   this->leavePrintSection();
-  return 0;
+
+  return this->sendResponse(true);
 }
 
 int RequestHandler::deleteTasks(json req)
@@ -112,5 +119,6 @@ int RequestHandler::deleteTasks(json req)
   this->enterPrintSection();
   std::cout << "delete tasks handler" << std::endl;
   this->leavePrintSection();
-  return 0;
+
+  return this->sendResponse(true);
 }

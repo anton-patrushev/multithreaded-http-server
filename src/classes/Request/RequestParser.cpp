@@ -37,19 +37,19 @@ void RequestParser::parseRequest()
   // extract url
   this->parseUrl();
 
+  // extract query params
+  // this->parseQueryString();
+
   // extract headers
 
   // extract body
 
-  // extract query params
+  //log request info
+  this->logRequest();
 }
 
 void RequestParser::setRequestType(std::string httpMethod)
 {
-  this->enterPrintSection();
-  std::cout << "HTTP METHOD -> " << httpMethod << std::endl;
-  this->leavePrintSection();
-
   if (httpMethod.compare("GET") == 0)
   {
     this->_requestType = constants::http::GET_HTTP;
@@ -97,16 +97,72 @@ void RequestParser::parseUrl()
     if (this->_rawRequest[i] == ' ')
       break;
 
-  this->_url = this->_rawRequest.substr(startIndex, length);
+  //full url with queryString;
+  this->_fullUrl = this->_rawRequest.substr(startIndex, length);
 
   this->enterPrintSection();
-  std::cout << "URL -> " << this->_url << std::endl;
+  std::cout << "full url -> \'" << this->_fullUrl << "\'" << std::endl;
   this->leavePrintSection();
+
+  length = 0;
+  for (int i = 0; i < this->_fullUrl.size(); ++i, ++length)
+    if (this->_fullUrl[length] == '?')
+      break;
+
+  if (length == this->_fullUrl.size())
+    this->_url = this->_fullUrl;
+  else
+    this->_url = this->_fullUrl.substr(0, length);
+
+  this->_queryString = this->_fullUrl.substr(length, this->_fullUrl.size() - length);
+}
+
+//  parsing scheme:
+//  paramName=value -> into json -> { "paramName": value }
+void RequestParser::parseQueryString()
+{
+  // if empty or only '?' symbol
+  if (this->_queryString.size() <= 1)
+    return;
+
+  // bad query string
+  if (this->_queryString[0] != '?')
+    return;
+
+  // bad query string
+  if (this->_queryString.find('=') == std::string::npos)
+    return;
+
+  std::string temp = this->_queryString.substr(1, this->_queryString.size());
+  std::stringstream ss(temp);
 }
 
 std::string RequestParser::getUrl() { return this->_url; }
 int RequestParser::getRequestType() { return this->_requestType; }
 
+void RequestParser::logRequest()
+{
+  this->enterPrintSection();
+  std::cout << "HTTP METHOD -> " << this->getHttpMethod() << std::endl;
+  std::cout << "url -> \'" << this->_url << "\'" << std::endl;
+  std::cout << "queryString -> \'" << this->_queryString << "\'" << std::endl;
+  this->leavePrintSection();
+}
+
+std::string RequestParser::getHttpMethod()
+{
+  if (this->_requestType == constants::http::GET_HTTP)
+    return "GET";
+
+  if (this->_requestType == constants::http::POST_HTTP)
+    return "POST";
+
+  if (this->_requestType == constants::http::PATCH_HTTP)
+    return "PATCH";
+
+  if (this->_requestType == constants::http::DELETE_HTTP)
+    return "DELETE";
+}
 // std::string RequestParser::getHTMLResponse(std::string fileName)
 // {
 //   int statusCode = 200;

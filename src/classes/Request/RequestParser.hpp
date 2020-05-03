@@ -11,12 +11,17 @@
 #include "../../helpers/json.hpp" // C++ JSON
 #include "../../helpers/constants.hpp"
 
+using json = nlohmann::json;
+
 class RequestParser
 {
   CRITICAL_SECTION *_printingSectionPointer;
-  std::string _rawRequest;
-  std::string _url;
   int _requestType;
+  std::string _rawRequest;
+  std::string _fullUrl;
+  std::string _url;
+  std::string _queryString;
+  json _queryParams;
 
   //something for headers (if necessary)
 
@@ -24,12 +29,15 @@ class RequestParser
 
   //something for query params (data structure, maybe similar to JSON (key -> value))
 
+  void parseQueryString();
   void parseUrl();
   void setRequestType(std::string httpMethod);
   std::string findFirstMatch(std::string str, std::regex regex);
   void enterPrintSection();
   void leavePrintSection();
   void parseRequest();
+  void logRequest();
+  std::string getHttpMethod();
 
 public:
   RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer);
