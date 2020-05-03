@@ -16,32 +16,39 @@ using json = nlohmann::json;
 class RequestParser
 {
   CRITICAL_SECTION *_printingSectionPointer;
-  int _requestType;
+  // raw data
   std::string _rawRequest;
   std::string _fullUrl;
-  std::string _url;
   std::string _queryString;
+
+  //parsed data
+  int _requestType;
+  std::string _url;
   json _queryParams;
+  json _headers;
+  json _body;
 
-  //something for headers (if necessary)
-
-  //something for body (think about C++ JSON)
-
-  //something for query params (data structure, maybe similar to JSON (key -> value))
-
-  void parseQueryString();
+  void parseRequest();
   void parseUrl();
+  void parseQueryString();
+  void parseHeaders();
+  void parseBody();
   void setRequestType(std::string httpMethod);
-  std::string findFirstMatch(std::string str, std::regex regex);
+
   void enterPrintSection();
   void leavePrintSection();
-  void parseRequest();
   void logRequest();
   std::string getHttpMethod();
+  std::string findFirstMatch(std::string str, std::regex regex);
+  std::string replaceAll(std::string source, std::string searching, std::string inserting);
+  std::string formatQueryString();
 
 public:
   RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer);
 
+  std::string getQueryParams();
+  std::string getBody();
+  std::string getHeaders();
   std::string getUrl();
   int getRequestType();
 };

@@ -1,9 +1,5 @@
 #include "./RequestParser.hpp"
 
-/**
- * @todo parse queryString params & store them (maybe as JSON)
-*/
-
 RequestParser::RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer)
 {
   this->_rawRequest = rawRequest;
@@ -38,11 +34,13 @@ void RequestParser::parseRequest()
   this->parseUrl();
 
   // extract query params
-  // this->parseQueryString();
+  this->parseQueryString();
 
-  // extract headers
+  // extract headers (only necessary)
+  this->parseHeaders();
 
   // extract body
+  this->parseBody();
 
   //log request info
   this->logRequest();
@@ -100,10 +98,6 @@ void RequestParser::parseUrl()
   //full url with queryString;
   this->_fullUrl = this->_rawRequest.substr(startIndex, length);
 
-  this->enterPrintSection();
-  std::cout << "full url -> \'" << this->_fullUrl << "\'" << std::endl;
-  this->leavePrintSection();
-
   length = 0;
   for (int i = 0; i < this->_fullUrl.size(); ++i, ++length)
     if (this->_fullUrl[length] == '?')
@@ -133,19 +127,26 @@ void RequestParser::parseQueryString()
   if (this->_queryString.find('=') == std::string::npos)
     return;
 
-  std::string temp = this->_queryString.substr(1, this->_queryString.size());
-  std::stringstream ss(temp);
+  this->_queryParams = json::parse(this->formatQueryString());
 }
-
-std::string RequestParser::getUrl() { return this->_url; }
-int RequestParser::getRequestType() { return this->_requestType; }
 
 void RequestParser::logRequest()
 {
   this->enterPrintSection();
+  std::cout << std::endl;
+  std::cout << "Request ->" << std::endl;
+
+  // std::cout << "Raw Request ->" << std::endl;
+  // std::cout << this->_rawRequest << std::endl;
+  // std::cout << std::endl;
+
   std::cout << "HTTP METHOD -> " << this->getHttpMethod() << std::endl;
+  std::cout << "full url -> \'" << this->_fullUrl << "\'" << std::endl;
   std::cout << "url -> \'" << this->_url << "\'" << std::endl;
-  std::cout << "queryString -> \'" << this->_queryString << "\'" << std::endl;
+  std::cout << "queryParams -> " << this->_queryParams << std::endl;
+  std::cout << "usefull headers -> " << this->_headers << std::endl;
+  std::cout << "body -> " << this->_body << std::endl;
+  std::cout << std::endl;
   this->leavePrintSection();
 }
 
@@ -163,34 +164,73 @@ std::string RequestParser::getHttpMethod()
   if (this->_requestType == constants::http::DELETE_HTTP)
     return "DELETE";
 }
-// std::string RequestParser::getHTMLResponse(std::string fileName)
-// {
-//   int statusCode = 200;
-//   std::string content;
-//   // set relative from project root
-//   std::ifstream file("./src/html/index.html");
 
-//   if (file.good())
-//   {
-//     std::string str((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-//     content = str;
-//     statusCode = 200;
-//   }
+void RequestParser::parseHeaders()
+{
+  std::string headerValue = "Authorization";
 
-//   file.close();
+  size_t position = this->_rawRequest.find(headerValue);
+  if (position != std::string::npos)
+  {
+    size_t length = 0;
+    for (size_t index = position + headerValue.size(); this->_rawRequest[index] != '\n' && this->_rawRequest[index] != '\r'; ++index, ++length)
+    {
+      // calculating end position (length of value)
+    }
 
-//   std::ostringstream oss;
-//   oss << "HTTP/1.1 " << statusCode << " OK\r\n";
-//   oss << "Cache-Control: no-cache, private\r\n";
-//   oss << "Content-Type: text/html\r\n";
-//   oss << "Content-Length: " << content.size() << "\r\n";
-//   oss << "\r\n";
-//   oss << content;
+    std::string authToken = this->_rawRequest.substr(position + headerValue.size() + 2, length - 2);
+    this->_headers["authToken"] = authToken;
+  }
+}
 
-//   return oss.str();
-// }
+void RequestParser::parseBody()
+{
+  size_t position = this->_rawRequest.find("\r\n\r\n");
 
-// int RequestParser::sendHTMLResponse(SOCKET acceptedSocket, std::string fileName)
-// {
-//   return this->sendResponse(acceptedSocket, this->getHTMLResponse(fileName));
-// }
+  if (position == std::string::npos)
+    return;
+  position += 4;
+  if (position == this->_rawRequest.size())
+    return;
+
+  std::string body = this->_rawRequest.substr(position, this->_rawRequest.size() - position);
+  this->_body = json::parse(body);
+}
+
+std::string RequestParser::getUrl() { return this->_url; }
+int RequestParser::getRequestType() { return this->_requestType; }
+std::string RequestParser::getQueryParams() { return this->_queryParams; }
+std::string RequestParser::getBody() { return this->_body; }
+std::string RequestParser::getHeaders() { return this->_headers; }
+
+std::string RequestParser::formatQueryString()
+{
+  std::string temp = this->_queryString.substr(1, this->_queryString.size() - 1);
+
+  temp.insert(temp.begin(), '{');
+  temp.insert(temp.end(), '}');
+  temp = this->replaceAll(temp, "=", "\":\"");
+  temp = this->replaceAll(temp, "&", "\",\"");
+  temp = this->replaceAll(temp, "{", "{\"");
+  temp = this->replaceAll(temp, "}", "\"}");
+
+  return temp;
+}
+std::string RequestParser::replaceAll(std::string source, std::string searching, std::string inserting)
+{
+  size_t index = 0;
+  while (index != std::string::npos)
+  {
+    // Locate the substring to replace.
+    index = source.find(searching.c_str(), index);
+    if (index == std::string::npos)
+      break;
+
+    // Make the replacement.
+    source.replace(index, searching.size(), inserting.c_str());
+
+    // Advance index forward so the next iteration doesn't pick it up as well.
+    index += inserting.size();
+  }
+  return source;
+}
