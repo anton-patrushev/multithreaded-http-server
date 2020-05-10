@@ -23,6 +23,23 @@ const std::string updateTask = "/api/tasks/_2";
 const std::string deleteTasks = "/api/tasks/_3";
 
 } // namespace routes
+
+namespace db
+{
+const int GET_USER = 0;
+const int CREATE_USER = 1;
+const int UPDATE_USER = 2;
+const int DELETE_USER = 3;
+
+const int GET_TASKS = 4;
+const int CREATE_TASK = 5;
+const int UPDATE_TASK = 6;
+const int DELETE_TASK = 7;
+
+const std::string salt = "unique_salt";
+const std::string jwtSecret = "jwt-secret";
+} // namespace db
+
 } // namespace constants
 
 #endif //CONSTANS_HPP

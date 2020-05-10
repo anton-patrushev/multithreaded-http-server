@@ -163,6 +163,8 @@ std::string RequestParser::getHttpMethod()
 
   if (this->_requestType == constants::http::DELETE_HTTP)
     return "DELETE";
+
+  return NULL;
 }
 
 void RequestParser::parseHeaders()
@@ -199,9 +201,9 @@ void RequestParser::parseBody()
 
 std::string RequestParser::getUrl() { return this->_url; }
 int RequestParser::getRequestType() { return this->_requestType; }
-std::string RequestParser::getQueryParams() { return this->_queryParams; }
-std::string RequestParser::getBody() { return this->_body; }
-std::string RequestParser::getHeaders() { return this->_headers; }
+json RequestParser::getQueryParams() { return this->_queryParams; }
+json RequestParser::getBody() { return this->_body; }
+json RequestParser::getHeaders() { return this->_headers; }
 
 std::string RequestParser::formatQueryString()
 {

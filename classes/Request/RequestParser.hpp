@@ -46,9 +46,9 @@ class RequestParser
 public:
   RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer);
 
-  std::string getQueryParams();
-  std::string getBody();
-  std::string getHeaders();
+  json getQueryParams();
+  json getBody();
+  json getHeaders();
   std::string getUrl();
   int getRequestType();
 };

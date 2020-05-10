@@ -26,22 +26,22 @@ void RequestHandler::leavePrintSection() { LeaveCriticalSection(this->_printingS
 int RequestHandler::handleRequest()
 {
   if (this->_key == constants::routes::login)
-    return this->loginUser(json());
+    return this->loginUser();
 
   if (this->_key == constants::routes::signUp)
-    return this->registerUser(json());
+    return this->registerUser();
 
   if (this->_key == constants::routes::getTasks)
-    return this->getTasks(json());
+    return this->getTasks();
 
   if (this->_key == constants::routes::createTask)
-    return this->createTask(json());
+    return this->createTask();
 
   if (this->_key == constants::routes::updateTask)
-    return this->updateTask(json());
+    return this->updateTask();
 
   if (this->_key == constants::routes::deleteTasks)
-    return this->deleteTasks(json());
+    return this->deleteTasks();
 
   return this->defaultHandler();
 };
@@ -54,40 +54,91 @@ int RequestHandler::defaultHandler()
 int RequestHandler::sendResponse(bool success)
 {
   if (success)
-  {
-    SuccessResponse response(this->_printingSectionPointer);
-    return response.sendResponse(this->_socket);
-  }
+    return SuccessResponse(this->_printingSectionPointer).sendResponse(this->_socket);
 
-  FailureResponse response(this->_printingSectionPointer);
-  return response.sendResponse(this->_socket);
+  return FailureResponse(this->_printingSectionPointer).sendResponse(this->_socket);
 }
 
 int RequestHandler::sendResponse(bool success, json res)
 {
-  // use Response class to return value with json content
-  return 0;
+  if (success)
+    return SuccessResponse(this->_printingSectionPointer, res).sendResponse(this->_socket);
+
+  return FailureResponse(this->_printingSectionPointer, res).sendResponse(this->_socket);
 }
 
-int RequestHandler::loginUser(json req)
+int RequestHandler::loginUser()
 {
   this->enterPrintSection();
   std::cout << "login handler" << std::endl;
   this->leavePrintSection();
 
+  json res = DBWorker::instance()->performOperation(constants::db::GET_USER, nullptr);
+
+  this->enterPrintSection();
+  std::cout << "res -> " << res << std::endl;
+  this->leavePrintSection();
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+
+  res.erase("status");
+
   return this->sendResponse(true);
 }
 
-int RequestHandler::registerUser(json req)
+int RequestHandler::registerUser()
 {
   this->enterPrintSection();
   std::cout << "register handler" << std::endl;
   this->leavePrintSection();
 
-  return this->sendResponse(true);
+  json body = this->_parser.getBody();
+
+  if (!this->keyExists(body, "email") || !this->keyExists(body, "password"))
+    return this->sendResponse(false, {{"error", "invalid body arguments"}});
+
+  std::string email = body["email"];
+  std::string password = body["password"];
+
+  if (email.size() <= 0)
+    return this->sendResponse(false, {{"error", "invalid email"}}); // TO-DO: send error message
+
+  if (password.size() <= 0)
+    return this->sendResponse(false, {{"error", "invalid password"}}); // TO-DO: send error message
+
+  // TO-DO: check email (regex)
+
+  // TO-DO: check password (regex)
+
+  json res = DBWorker::instance()->performOperation(constants::db::CREATE_USER, {{"email", email.c_str()}, {"password", password.c_str()}});
+
+  this->enterPrintSection();
+  std::cout << "res -> " << res << std::endl;
+  this->leavePrintSection();
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+
+  res.erase("status");
+
+  std::string token = jwt::create()
+                          .set_type("JWS")
+                          .set_payload_claim("id", jwt::claim(std::string("id")))
+                          .sign(jwt::algorithm::hs256{"secret"});
+
+  res["token"] = token;
+
+  return this->sendResponse(true, res);
 }
 
-int RequestHandler::getTasks(json req)
+int RequestHandler::getTasks()
 {
   this->enterPrintSection();
   std::cout << "get tasks handler" << std::endl;
@@ -96,7 +147,7 @@ int RequestHandler::getTasks(json req)
   return this->sendResponse(true);
 }
 
-int RequestHandler::createTask(json req)
+int RequestHandler::createTask()
 {
   this->enterPrintSection();
   std::cout << "create task handler" << std::endl;
@@ -105,7 +156,7 @@ int RequestHandler::createTask(json req)
   return this->sendResponse(true);
 }
 
-int RequestHandler::updateTask(json req)
+int RequestHandler::updateTask()
 {
   this->enterPrintSection();
   std::cout << "update task handler" << std::endl;
@@ -114,7 +165,7 @@ int RequestHandler::updateTask(json req)
   return this->sendResponse(true);
 }
 
-int RequestHandler::deleteTasks(json req)
+int RequestHandler::deleteTasks()
 {
   this->enterPrintSection();
   std::cout << "delete tasks handler" << std::endl;
@@ -122,3 +173,5 @@ int RequestHandler::deleteTasks(json req)
 
   return this->sendResponse(true);
 }
+
+bool RequestHandler::keyExists(const json &j, const std::string &key) { return j.find(key) != j.end(); }

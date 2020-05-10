@@ -7,8 +7,6 @@ using json = nlohmann::json;
 
 class SuccessResponse : public Response
 {
-  int sendSuccessResponse();
-
 public:
   SuccessResponse(CRITICAL_SECTION *printSection);
   SuccessResponse(CRITICAL_SECTION *printSection, json res);

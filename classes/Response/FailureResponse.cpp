@@ -7,18 +7,10 @@ FailureResponse::FailureResponse(CRITICAL_SECTION *printSection)
   this->_res["response"]["statusCode"] = 400;
 }
 
-FailureResponse::FailureResponse(CRITICAL_SECTION *printSection, std::string message)
+FailureResponse::FailureResponse(CRITICAL_SECTION *printSection, json res)
     : Response(printSection)
 {
   this->_res["status"] = "failure";
   this->_res["response"]["statusCode"] = 400;
-  this->_res["response"]["data"] = {"message", message.c_str()};
-}
-
-FailureResponse::FailureResponse(CRITICAL_SECTION *printSection, std::string message, json res)
-    : Response(printSection)
-{
-  this->_res["status"] = "failure";
-  this->_res["response"]["statusCode"] = 400;
-  this->_res["response"]["data"] = {{"message", message.c_str()}, {"data", res}};
+  this->_res["response"]["data"] = res;
 }
