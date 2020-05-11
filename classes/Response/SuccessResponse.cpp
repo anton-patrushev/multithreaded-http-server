@@ -12,5 +12,8 @@ SuccessResponse::SuccessResponse(CRITICAL_SECTION *printSection, json res)
 {
   this->_res["status"] = "success",
   this->_res["response"]["statusCode"] = 200;
-  this->_res["response"]["data"] = res;
+  if (keyExists(res, "data"))
+    this->_res["response"]["data"] = res["data"];
+  else
+    this->_res["response"]["data"] = res;
 }

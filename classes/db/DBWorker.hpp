@@ -10,6 +10,7 @@
 #include "../../helpers/sqlite3.h"
 #include "../../helpers/json.hpp"
 #include "../../helpers/constants.hpp"
+#include "../../helpers/helpers.hpp"
 
 using json = nlohmann::json;
 
@@ -36,6 +37,9 @@ class DBWorker
 
   DBWorker();
 
+  static int sqlCallback(void *, int columns, char **fields, char **columnNames);
+  static void toLowerCase(std::string &src);
+
 public:
   DBWorker(DBWorker const &) = delete;
   DBWorker &operator=(DBWorker const &) = delete;
@@ -47,7 +51,6 @@ public:
   }
 
   json performOperation(int operationType, json content);
-  static int sqlCallback(void*, int columns, char** fields, char** columnNames);
 
   ~DBWorker();
 };

@@ -2,6 +2,7 @@
 #define SUCCESS_RESPONSE_HPP
 
 #include "./Response.hpp";
+#include "../../helpers/helpers.hpp";
 
 using json = nlohmann::json;
 

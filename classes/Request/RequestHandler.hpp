@@ -3,7 +3,8 @@
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "libcrypto.lib")
-#pragma comment(lib, "openssl.lib")
+#pragma comment(lib, "libssl.lib")
+#pragma comment(lib, "jwtd.lib")
 
 //#define CPP_JWT_USE_VENDORED_NLOHMANN_JSON
 
@@ -25,6 +26,7 @@
 // helpers
 #include "../../helpers/json.hpp" //C++ JSON
 #include "../../helpers/constants.hpp"
+#include "../../helpers/helpers.hpp"
 
 #define NOMINMAX
 #undef max
@@ -58,8 +60,6 @@ class RequestHandler
 
   int sendResponse(bool success);
   int sendResponse(bool success, json res);
-
-  bool keyExists(const json &j, const std::string &key);
 
 public:
   RequestHandler(std::string rawRequest, SOCKET acceptedSocket, CRITICAL_SECTION *printingSectionPointer);

@@ -1,6 +1,6 @@
 #include "./DBWorker.hpp"
 
-const bool firstTime = false;
+const bool firstTime = true;
 
 DBWorker::DBWorker()
 {
@@ -132,20 +132,11 @@ json DBWorker::createUser(json content)
     return {{"status", "error"}, {"message", error}};
   }
 
-  return {{"status", "success"}};
-};
+  query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
 
-json DBWorker::getUser(json content)
-{
-  // std::string email = content["email"];
-  // std::string password = content["password"];
-
-  // std::hash<std::string> hash;
-  // std::string result = std::to_string(hash(password + constants::db::salt));
-
-  std::string query = "SELECT * FROM USERS";
-  char *messageError = NULL;
-  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), 0, &messageError);
+  messageError = NULL;
+  json res;
+  status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
 
   if (status != SQLITE_OK)
   {
@@ -154,7 +145,31 @@ json DBWorker::getUser(json content)
     return {{"status", "error"}, {"message", error}};
   }
 
-  return {{"status", "success"}};
+  // std::cout << "createUser res -> " << res << std::endl;
+
+  res["data"].erase("email");
+  res["data"].erase("password");
+  return res["data"];
+};
+
+json DBWorker::getUser(json content)
+{
+  std::cout << content << std::endl;
+  std::string email = content["email"];
+  std::string query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
+
+  char *messageError = NULL;
+  json res;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  return res;
 };
 
 json DBWorker::deleteUser(json content) { return nullptr; };
@@ -165,15 +180,48 @@ json DBWorker::getTasks(json content) { return nullptr; };
 json DBWorker::deleteTask(json content) { return nullptr; };
 json DBWorker::updateTask(json content) { return nullptr; };
 
-int DBWorker::sqlCallback(void *, int columns, char **fields, char **columnNames)
+int DBWorker::sqlCallback(void *data, int columns, char **fields, char **columnNames)
 {
+  json *JSON = (json *)data;
+  json localResult;
 
   for (int i = 0; i < columns; i++)
   {
-    const char *field = fields[i] ? fields[i] : "NULL";
-    std::cout << columnNames[i] << " = " << field << std::endl;
+    const char *field = fields[i] ? fields[i] : "null";
+    std::string name(columnNames[i]);
+
+    // property to lower case
+    DBWorker::toLowerCase(name);
+    localResult[name.c_str()] = field;
   }
 
-  std::cout << std::endl;
+  if (keyExists(*JSON, "data") && (*JSON)["data"].is_array())
+  {
+    (*JSON)["data"].push_back(localResult);
+  }
+  else
+  {
+    (*JSON)["data"] = localResult;
+  }
+
   return 0;
 }
+
+void DBWorker::toLowerCase(std::string &src)
+{
+  std::transform(src.begin(), src.end(), src.begin(), [](unsigned char c) { return std::tolower(c); });
+}
+
+// std::string query = "SELECT * FROM USERS";
+// char *messageError = NULL;
+// json res;
+// res["data"] = {};
+// int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+// std::cout << "json res -> " << res << std::endl;
+// if (status != SQLITE_OK)
+// {
+//   std::string error = messageError;
+//   sqlite3_free(messageError);
+//   return {{"status", "error"}, {"message", error}};
+// }

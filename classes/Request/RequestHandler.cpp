@@ -87,7 +87,7 @@ int RequestHandler::loginUser()
 
   res.erase("status");
 
-  return this->sendResponse(true);
+  return this->sendResponse(true, res);
 }
 
 int RequestHandler::registerUser()
@@ -98,7 +98,7 @@ int RequestHandler::registerUser()
 
   json body = this->_parser.getBody();
 
-  if (!this->keyExists(body, "email") || !this->keyExists(body, "password"))
+  if (!keyExists(body, "email") || !keyExists(body, "password"))
     return this->sendResponse(false, {{"error", "invalid body arguments"}});
 
   std::string email = body["email"];
@@ -113,6 +113,12 @@ int RequestHandler::registerUser()
   // TO-DO: check email (regex)
 
   // TO-DO: check password (regex)
+  json searchResult = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"email", email.c_str()}});
+
+  if (!searchResult.empty())
+  {
+    return this->sendResponse(false, {{"message", "user already exists"}});
+  }
 
   json res = DBWorker::instance()->performOperation(constants::db::CREATE_USER, {{"email", email.c_str()}, {"password", password.c_str()}});
 
@@ -127,14 +133,12 @@ int RequestHandler::registerUser()
   }
 
   res.erase("status");
-
   std::string token = jwt::create()
                           .set_type("JWS")
-                          .set_payload_claim("id", jwt::claim(std::string("id")))
+                          .set_payload_claim("id", jwt::claim(std::string(res["id"])))
                           .sign(jwt::algorithm::hs256{"secret"});
 
   res["token"] = token;
-
   return this->sendResponse(true, res);
 }
 
@@ -173,5 +177,3 @@ int RequestHandler::deleteTasks()
 
   return this->sendResponse(true);
 }
-
-bool RequestHandler::keyExists(const json &j, const std::string &key) { return j.find(key) != j.end(); }
