@@ -10,6 +10,7 @@
 
 #include "../../helpers/json.hpp" // C++ JSON
 #include "../../helpers/constants.hpp"
+#include "../../helpers/helpers.hpp"
 
 using json = nlohmann::json;
 
@@ -39,16 +40,15 @@ class RequestParser
   void leavePrintSection();
   void logRequest();
   std::string getHttpMethod();
-  std::string findFirstMatch(std::string str, std::regex regex);
   std::string replaceAll(std::string source, std::string searching, std::string inserting);
   std::string formatQueryString();
 
 public:
   RequestParser(std::string rawRequest, CRITICAL_SECTION *printingSectionPointer);
 
-  std::string getQueryParams();
-  std::string getBody();
-  std::string getHeaders();
+  json getQueryParams();
+  json getBody();
+  json getHeaders();
   std::string getUrl();
   int getRequestType();
 };

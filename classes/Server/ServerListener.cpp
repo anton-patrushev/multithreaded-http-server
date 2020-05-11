@@ -117,7 +117,7 @@ int ServerListener::run()
       std::cout << "Connected! Socket -> " << clientSocket << std::endl;
       this->leavePrintingSection();
       //run thread & add to threads map
-      // this->_threads[clientSocket] = std::thread(ServerListener::requestHandler, clientSocket, &this->_printSection);
+
       RequestHandlerParameter parameter = {clientSocket, &this->_printSection};
       this->_threads[clientSocket] = CreateThread(NULL, 1024, ServerListener::requestHandler, &parameter, 0, NULL);
 
@@ -152,7 +152,10 @@ DWORD WINAPI ServerListener::requestHandler(CONST LPVOID parameter)
       EnterCriticalSection(printSection);
       std::cout << "receive error -> " << WSAGetLastError() << std::endl;
       LeaveCriticalSection(printSection);
-      break;
+
+      // close socket and exit thread
+      connected = false;
+      continue;
     }
 
     if (receieveStatus == 0)
@@ -160,7 +163,10 @@ DWORD WINAPI ServerListener::requestHandler(CONST LPVOID parameter)
       EnterCriticalSection(printSection);
       std::cout << "connection is closed" << std::endl;
       LeaveCriticalSection(printSection);
-      break; // close socket and exit thread
+
+      // close socket and exit thread
+      connected = false;
+      continue;
     }
 
     buffer[receieveStatus] = 0;
@@ -169,9 +175,7 @@ DWORD WINAPI ServerListener::requestHandler(CONST LPVOID parameter)
     LeaveCriticalSection(printSection);
 
     // parse received buffer (extract headers, body, url, queryString and etc.)
-
-    RequestHandler handler(buffer, acceptedSocket, printSection);
-    int handleStatus = handler.handleRequest();
+    int handleStatus = RequestHandler(buffer, acceptedSocket, printSection).handleRequest();
     if (handleStatus != 0)
     {
       EnterCriticalSection(printSection);

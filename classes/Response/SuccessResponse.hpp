@@ -2,13 +2,12 @@
 #define SUCCESS_RESPONSE_HPP
 
 #include "./Response.hpp";
+#include "../../helpers/helpers.hpp";
 
 using json = nlohmann::json;
 
 class SuccessResponse : public Response
 {
-  int sendSuccessResponse();
-
 public:
   SuccessResponse(CRITICAL_SECTION *printSection);
   SuccessResponse(CRITICAL_SECTION *printSection, json res);

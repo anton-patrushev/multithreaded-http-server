@@ -1,6 +1,8 @@
 #ifndef CONSTANS_HPP
 #define CONSTANS_HPP
 
+#include <regex>
+
 namespace constants
 {
 namespace http
@@ -23,6 +25,28 @@ const std::string updateTask = "/api/tasks/_2";
 const std::string deleteTasks = "/api/tasks/_3";
 
 } // namespace routes
+
+namespace db
+{
+const int GET_USER = 0;
+const int CREATE_USER = 1;
+const int UPDATE_USER = 2;
+const int DELETE_USER = 3;
+
+const int GET_TASKS = 4;
+const int CREATE_TASK = 5;
+const int UPDATE_TASK = 6;
+const int DELETE_TASK = 7;
+
+const std::string salt = "unique_salt";
+const std::string jwtSecret = "jwt-secret";
+} // namespace db
+
+namespace validation
+{
+const std::regex emailRegex("^(([^<>()\\[\\]\\.,;:\\s@\"]+(\\.[^<>()\\[\\]\\.,;:\\s@\"]+)*)|(\".+\"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$", std::regex_constants::ECMAScript);
+} // namespace validation
+
 } // namespace constants
 
 #endif //CONSTANS_HPP

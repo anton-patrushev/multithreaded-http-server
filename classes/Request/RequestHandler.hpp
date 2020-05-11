@@ -2,6 +2,11 @@
 #define REQUEST_HANDLER_HPP
 
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "libcrypto.lib")
+#pragma comment(lib, "libssl.lib")
+#pragma comment(lib, "jwtd.lib")
+
+//#define CPP_JWT_USE_VENDORED_NLOHMANN_JSON
 
 #include <WS2tcpip.h>
 #include <vector>
@@ -9,12 +14,27 @@
 #include <sstream>
 #include <iostream>
 
+// db
+#include "../db/DBWorker.hpp"
+// Response
 #include "../Response/FailureResponse.hpp"
 #include "../Response/SuccessResponse.hpp"
 
+// Request Parser
 #include "./RequestParser.hpp"
+
+// helpers
 #include "../../helpers/json.hpp" //C++ JSON
 #include "../../helpers/constants.hpp"
+#include "../../helpers/helpers.hpp"
+
+#define NOMINMAX
+#undef max
+#undef min
+#include "jwt-cpp/jwt.h"
+
+// #include "../../../../jwt-cpp/src/include/jwt/hmacvalidator.h"
+//#include "../../helpers/helpers.hpp"
 
 using json = nlohmann::json;
 
@@ -31,12 +51,12 @@ class RequestHandler
   void leavePrintSection();
 
   int defaultHandler();
-  int loginUser(json req);
-  int registerUser(json req);
-  int getTasks(json req);
-  int createTask(json req);
-  int updateTask(json req);
-  int deleteTasks(json req);
+  int loginUser();
+  int registerUser();
+  int getTasks();
+  int createTask();
+  int updateTask();
+  int deleteTasks();
 
   int sendResponse(bool success);
   int sendResponse(bool success, json res);
