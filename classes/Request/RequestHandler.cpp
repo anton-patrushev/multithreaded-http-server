@@ -81,7 +81,7 @@ int RequestHandler::loginUser()
   std::string email = body["email"];
   std::string password = body["password"];
 
-  if (email.size() <= 0)
+  if (email.size() <= 0 || findFirstMatch(email, constants::validation::emailRegex).size() <= 0)
     return this->sendResponse(false, {{"error", "invalid email"}}); // TO-DO: send error message
 
   if (password.size() <= 0)
@@ -139,7 +139,7 @@ int RequestHandler::registerUser()
   std::string email = body["email"];
   std::string password = body["password"];
 
-  if (email.size() <= 0)
+  if (email.size() <= 0 || findFirstMatch(email, constants::validation::emailRegex).size() <= 0)
     return this->sendResponse(false, {{"error", "invalid email"}}); // TO-DO: send error message
 
   if (password.size() <= 0)

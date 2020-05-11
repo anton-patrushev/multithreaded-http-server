@@ -11,24 +11,11 @@ RequestParser::RequestParser(std::string rawRequest, CRITICAL_SECTION *printingS
 void RequestParser::enterPrintSection() { EnterCriticalSection(this->_printingSectionPointer); }
 void RequestParser::leavePrintSection() { LeaveCriticalSection(this->_printingSectionPointer); }
 
-std::string RequestParser::findFirstMatch(std::string str, std::regex regex)
-{
-  std::smatch matches;
-  std::regex_search(this->_rawRequest, matches, regex);
-
-  while (!matches.ready())
-  {
-    //waiting until matches full filled and established
-  }
-
-  return matches[0];
-}
-
 void RequestParser::parseRequest()
 {
   // extract method type
   std::regex httpMethodRegex("^[A-Z]{3,}");
-  this->setRequestType(this->findFirstMatch(this->_rawRequest, httpMethodRegex));
+  this->setRequestType(findFirstMatch(this->_rawRequest, httpMethodRegex));
 
   // extract url
   this->parseUrl();
