@@ -73,7 +73,37 @@ int RequestHandler::loginUser()
   std::cout << "login handler" << std::endl;
   this->leavePrintSection();
 
-  json res = DBWorker::instance()->performOperation(constants::db::GET_USER, nullptr);
+  json body = this->_parser.getBody();
+
+  if (!keyExists(body, "email") || !keyExists(body, "password"))
+    return this->sendResponse(false, {{"error", "invalid body arguments"}});
+
+  std::string email = body["email"];
+  std::string password = body["password"];
+
+  if (email.size() <= 0)
+    return this->sendResponse(false, {{"error", "invalid email"}}); // TO-DO: send error message
+
+  if (password.size() <= 0)
+    return this->sendResponse(false, {{"error", "invalid password"}}); // TO-DO: send error message
+
+  json searchResult = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"email", email}});
+
+  if (searchResult.empty())
+  {
+    return this->sendResponse(false, {{"message", "user with this email doesn't exist"}});
+  }
+
+  std::hash<std::string> hash;
+  std::string hashedPassword = std::to_string(hash(password + constants::db::salt));
+
+  if (searchResult["data"]["password"] != hashedPassword)
+    return this->sendResponse(false, {{"message", "wrong password"}});
+
+  json res;
+
+  if (keyExists(searchResult, "data") && searchResult["data"].is_object() && keyExists(searchResult["data"], "id"))
+    res["id"] = searchResult["data"]["id"];
 
   this->enterPrintSection();
   std::cout << "res -> " << res << std::endl;
@@ -86,7 +116,12 @@ int RequestHandler::loginUser()
   }
 
   res.erase("status");
+  std::string token = jwt::create()
+                          .set_type("JWS")
+                          .set_payload_claim("id", jwt::claim(std::string(res["id"])))
+                          .sign(jwt::algorithm::hs256{"secret"});
 
+  res["token"] = token;
   return this->sendResponse(true, res);
 }
 

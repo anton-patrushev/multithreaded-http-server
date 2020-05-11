@@ -1,6 +1,6 @@
 #include "./DBWorker.hpp"
 
-const bool firstTime = true;
+const bool firstTime = false;
 
 DBWorker::DBWorker()
 {
@@ -154,7 +154,6 @@ json DBWorker::createUser(json content)
 
 json DBWorker::getUser(json content)
 {
-  std::cout << content << std::endl;
   std::string email = content["email"];
   std::string query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
 
