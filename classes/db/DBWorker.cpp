@@ -60,7 +60,7 @@ int DBWorker::init()
 
   query = "CREATE TABLE TASKS("
           "ID        INTEGER PRIMARY KEY NOT NULL,"
-          "USER_ID   INTEGER             NOT NULL,"
+          "USER      INTEGER             NOT NULL,"
           "TASK      TEXT                NOT NULL)";
 
   status = sqlite3_exec(this->_db, query.c_str(), NULL, 0, &messageError);
@@ -115,12 +115,9 @@ json DBWorker::createUser(json content)
   std::string email = content["email"];
   std::string password = content["password"];
 
-  std::hash<std::string> hash;
-  std::string result = std::to_string(hash(password + constants::db::salt));
-
   std::string query = "INSERT INTO USERS (EMAIL, PASSWORD)"
                       "VALUES('" +
-                      email + "', '" + result + "');";
+                      email + "', '" + password + "');";
 
   char *messageError = NULL;
   int status = sqlite3_exec(this->_db, query.c_str(), NULL, 0, &messageError);
@@ -172,7 +169,27 @@ json DBWorker::getUser(json content)
 };
 
 json DBWorker::deleteUser(json content) { return nullptr; };
-json DBWorker::updateUser(json content) { return nullptr; };
+
+json DBWorker::updateUser(json content)
+{
+  std::string id = content["id"];
+  std::string newPassword = content["newPassword"];
+
+  std::string query = "UPDATE USERS SET PASSWORD = '" + newPassword + "' WHERE ID = '" + id + "';";
+
+  char *messageError = NULL;
+  json res;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  return res;
+};
 
 json DBWorker::createTask(json content) { return nullptr; };
 json DBWorker::getTasks(json content) { return nullptr; };
@@ -190,7 +207,7 @@ int DBWorker::sqlCallback(void *data, int columns, char **fields, char **columnN
     std::string name(columnNames[i]);
 
     // property to lower case
-    DBWorker::toLowerCase(name);
+    toLowerCase(name);
     localResult[name.c_str()] = field;
   }
 
@@ -204,11 +221,6 @@ int DBWorker::sqlCallback(void *data, int columns, char **fields, char **columnN
   }
 
   return 0;
-}
-
-void DBWorker::toLowerCase(std::string &src)
-{
-  std::transform(src.begin(), src.end(), src.begin(), [](unsigned char c) { return std::tolower(c); });
 }
 
 // std::string query = "SELECT * FROM USERS";

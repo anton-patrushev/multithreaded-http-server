@@ -38,7 +38,6 @@ class DBWorker
   DBWorker();
 
   static int sqlCallback(void *, int columns, char **fields, char **columnNames);
-  static void toLowerCase(std::string &src);
 
 public:
   DBWorker(DBWorker const &) = delete;

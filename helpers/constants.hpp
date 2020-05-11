@@ -17,6 +17,8 @@ const char ROUTE_KEY_DELIMITER = '_';
 
 namespace routes
 {
+const std::string updateUser = "/api/users/_2";
+const std::string deleteUser = "/api/users/_3";
 const std::string login = "/api/users/login/_1";
 const std::string signUp = "/api/users/register/_1";
 const std::string getTasks = "/api/tasks/_0";

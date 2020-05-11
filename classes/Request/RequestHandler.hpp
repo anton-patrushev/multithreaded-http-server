@@ -50,9 +50,16 @@ class RequestHandler
   void enterPrintSection();
   void leavePrintSection();
 
+  // for any routes
   int defaultHandler();
+
+  // user routes
   int loginUser();
   int registerUser();
+  int updateUser();
+  int deleteUser();
+
+  // task routes
   int getTasks();
   int createTask();
   int updateTask();

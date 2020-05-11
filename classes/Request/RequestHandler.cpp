@@ -25,11 +25,18 @@ void RequestHandler::leavePrintSection() { LeaveCriticalSection(this->_printingS
 
 int RequestHandler::handleRequest()
 {
+
   if (this->_key == constants::routes::login)
     return this->loginUser();
 
   if (this->_key == constants::routes::signUp)
     return this->registerUser();
+
+  if (this->_key == constants::routes::updateUser)
+    return this->updateUser();
+
+  if (this->_key == constants::routes::deleteUser)
+    return this->deleteUser();
 
   if (this->_key == constants::routes::getTasks)
     return this->getTasks();
@@ -97,7 +104,7 @@ int RequestHandler::loginUser()
   std::hash<std::string> hash;
   std::string hashedPassword = std::to_string(hash(password + constants::db::salt));
 
-  if (searchResult["data"]["password"] != hashedPassword)
+  if (!verifyPassword(password, searchResult["data"]["password"]))
     return this->sendResponse(false, {{"message", "wrong password"}});
 
   json res;
@@ -145,17 +152,13 @@ int RequestHandler::registerUser()
   if (password.size() <= 0)
     return this->sendResponse(false, {{"error", "invalid password"}}); // TO-DO: send error message
 
-  // TO-DO: check email (regex)
-
-  // TO-DO: check password (regex)
   json searchResult = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"email", email.c_str()}});
 
   if (!searchResult.empty())
-  {
     return this->sendResponse(false, {{"message", "user already exists"}});
-  }
 
-  json res = DBWorker::instance()->performOperation(constants::db::CREATE_USER, {{"email", email.c_str()}, {"password", password.c_str()}});
+  std::string hashedPassword = hashPassword(password);
+  json res = DBWorker::instance()->performOperation(constants::db::CREATE_USER, {{"email", email}, {"password", hashedPassword}});
 
   this->enterPrintSection();
   std::cout << "res -> " << res << std::endl;
@@ -175,6 +178,57 @@ int RequestHandler::registerUser()
 
   res["token"] = token;
   return this->sendResponse(true, res);
+}
+
+int RequestHandler::updateUser()
+{
+  this->enterPrintSection();
+  std::cout << "update user handler" << std::endl;
+  this->leavePrintSection();
+
+  json body = this->_parser.getBody();
+  json queryParams = this->_parser.getQueryParams();
+  json header = this->_parser.getHeaders();
+
+  // check auth header (token)
+  // parse token -> get user id
+
+  // get user by id
+
+  // compare given password with stored in db
+
+  // if comparison failed
+  // send failure response
+
+  // if success
+  // create hashed password
+  // update user password
+  // send success response
+}
+
+int RequestHandler::deleteUser()
+{
+  this->enterPrintSection();
+  std::cout << "delete user handler" << std::endl;
+  this->leavePrintSection();
+
+  json body = this->_parser.getBody();
+  json queryParams = this->_parser.getQueryParams();
+  json header = this->_parser.getHeaders();
+
+  // check auth header (token)
+  // parse token -> get user id
+
+  // get user by id
+
+  // compare given password with stored in db
+
+  // if comparison failed
+  // send failure response
+
+  // if success
+  // delete user
+  // send success response
 }
 
 int RequestHandler::getTasks()
