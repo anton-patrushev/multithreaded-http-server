@@ -168,7 +168,7 @@ void RequestParser::parseHeaders()
     }
 
     std::string authToken = this->_rawRequest.substr(position + headerValue.size() + 2, length - 2);
-    this->_headers["authToken"] = authToken;
+    this->_headers["Authorization"] = authToken;
   }
 }
 

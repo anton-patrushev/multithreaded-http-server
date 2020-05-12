@@ -24,17 +24,10 @@
 #include "./RequestParser.hpp"
 
 // helpers
-#include "../../helpers/json.hpp" //C++ JSON
+#include "../../helpers/json.hpp"
 #include "../../helpers/constants.hpp"
 #include "../../helpers/helpers.hpp"
-
-#define NOMINMAX
-#undef max
-#undef min
-#include "jwt-cpp/jwt.h"
-
-// #include "../../../../jwt-cpp/src/include/jwt/hmacvalidator.h"
-//#include "../../helpers/helpers.hpp"
+#include "../../helpers/jwt.hpp"
 
 using json = nlohmann::json;
 

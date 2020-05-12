@@ -151,8 +151,19 @@ json DBWorker::createUser(json content)
 
 json DBWorker::getUser(json content)
 {
-  std::string email = content["email"];
-  std::string query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
+  std::string query;
+  if (keyExists(content, "id"))
+  {
+    std::string id = content["id"];
+    query = "SELECT * FROM USERS WHERE ID = '" + id + "';";
+  }
+  else if (keyExists(content, "email"))
+  {
+    std::string email = content["email"];
+    query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
+  }
+  else
+    return {{"status", "error"}};
 
   char *messageError = NULL;
   json res;
@@ -168,7 +179,27 @@ json DBWorker::getUser(json content)
   return res;
 };
 
-json DBWorker::deleteUser(json content) { return nullptr; };
+json DBWorker::deleteUser(json content)
+{
+  if (!keyExists(content, "id"))
+    return {{"status", "error"}};
+
+  std::string id = content["id"];
+  std::string query = "DELETE FROM USERS WHERE ID = '" + id + "';";
+
+  char *messageError = NULL;
+  json res;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  return res;
+};
 
 json DBWorker::updateUser(json content)
 {

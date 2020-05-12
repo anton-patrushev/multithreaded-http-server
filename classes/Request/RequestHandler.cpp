@@ -55,6 +55,7 @@ int RequestHandler::handleRequest()
 
 int RequestHandler::defaultHandler()
 {
+  // TO-DO: create info message
   return this->sendResponse(false);
 }
 
@@ -89,10 +90,10 @@ int RequestHandler::loginUser()
   std::string password = body["password"];
 
   if (email.size() <= 0 || findFirstMatch(email, constants::validation::emailRegex).size() <= 0)
-    return this->sendResponse(false, {{"error", "invalid email"}}); // TO-DO: send error message
+    return this->sendResponse(false, {{"error", "invalid email"}});
 
   if (password.size() <= 0)
-    return this->sendResponse(false, {{"error", "invalid password"}}); // TO-DO: send error message
+    return this->sendResponse(false, {{"error", "invalid password"}});
 
   json searchResult = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"email", email}});
 
@@ -123,12 +124,8 @@ int RequestHandler::loginUser()
   }
 
   res.erase("status");
-  std::string token = jwt::create()
-                          .set_type("JWS")
-                          .set_payload_claim("id", jwt::claim(std::string(res["id"])))
-                          .sign(jwt::algorithm::hs256{"secret"});
+  res["token"] = jwtToken::signToken(res["id"]);
 
-  res["token"] = token;
   return this->sendResponse(true, res);
 }
 
@@ -150,7 +147,7 @@ int RequestHandler::registerUser()
     return this->sendResponse(false, {{"error", "invalid email"}}); // TO-DO: send error message
 
   if (password.size() <= 0)
-    return this->sendResponse(false, {{"error", "invalid password"}}); // TO-DO: send error message
+    return this->sendResponse(false, {{"error", "invalid password"}});
 
   json searchResult = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"email", email.c_str()}});
 
@@ -171,12 +168,8 @@ int RequestHandler::registerUser()
   }
 
   res.erase("status");
-  std::string token = jwt::create()
-                          .set_type("JWS")
-                          .set_payload_claim("id", jwt::claim(std::string(res["id"])))
-                          .sign(jwt::algorithm::hs256{"secret"});
+  res["token"] = jwtToken::signToken(res["id"]);
 
-  res["token"] = token;
   return this->sendResponse(true, res);
 }
 
@@ -188,22 +181,73 @@ int RequestHandler::updateUser()
 
   json body = this->_parser.getBody();
   json queryParams = this->_parser.getQueryParams();
-  json header = this->_parser.getHeaders();
+  json headers = this->_parser.getHeaders();
+
+  if (!keyExists(queryParams, "id"))
+    return this->sendResponse(false, {{"error", "invalid query string parameters"}});
+
+  std::string queryId = queryParams["id"];
 
   // check auth header (token)
+  if (!keyExists(headers, "Authorization"))
+    return this->sendResponse(false, {{"error", "Authorization header is missed"}});
+
+  std::string token = headers["Authorization"];
+
   // parse token -> get user id
+  std::string id = jwtToken::parseToken(token);
+
+  if (id.compare(queryId) != 0)
+    return this->sendResponse(false, {{"message", "token id doesn't match id provided with query string"}});
 
   // get user by id
+  json res = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"id", id}});
 
-  // compare given password with stored in db
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+
+  res.erase("status");
+
+  if (!keyExists(body, "password"))
+    return this->sendResponse(false, {{"error", "invalid body arguments"}});
+
+  std::string password = body["password"];
+
+  if (password.size() <= 0)
+    return this->sendResponse(false, {{"error", "invalid password"}});
 
   // if comparison failed
   // send failure response
+  if (!verifyPassword(password, res["data"]["password"]))
+    return this->sendResponse(false, {{"error", "wrong current password"}});
 
   // if success
+  if (!keyExists(body, "newPassword"))
+    return this->sendResponse(false, {{"error", "'newPassword' is missed"}});
+
+  std::string newPassword = body["newPassword"];
+
+  if (newPassword.size() <= 0)
+    return this->sendResponse(false, {{"error", "invalid new password"}});
+
   // create hashed password
+  std::string hash = hashPassword(newPassword);
+
   // update user password
+  res = DBWorker::instance()->performOperation(constants::db::UPDATE_USER, {{"id", id}, {"newPassword", hash}});
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+  res.erase("status");
+
   // send success response
+  return this->sendResponse(true, {{"message", "password was successfully updated"}});
 }
 
 int RequestHandler::deleteUser()
@@ -214,21 +258,59 @@ int RequestHandler::deleteUser()
 
   json body = this->_parser.getBody();
   json queryParams = this->_parser.getQueryParams();
-  json header = this->_parser.getHeaders();
+  json headers = this->_parser.getHeaders();
+
+  if (!keyExists(queryParams, "id"))
+    return this->sendResponse(false, {{"error", "invalid query string parameters"}});
+
+  std::string queryId = queryParams["id"];
 
   // check auth header (token)
+  if (!keyExists(headers, "Authorization"))
+    return this->sendResponse(false, {{"error", "Authorization header is missed"}});
+
+  std::string token = headers["Authorization"];
+
   // parse token -> get user id
+  std::string id = jwtToken::parseToken(token);
+
+  if (id.compare(queryId) != 0)
+    return this->sendResponse(false, {{"message", "token id doesn't match id provided with query string"}});
 
   // get user by id
+  json res = DBWorker::instance()->performOperation(constants::db::GET_USER, {{"id", id}});
+
+  if (res.empty() || res["status"] == "error")
+  {
+    res.empty() ? 0 : res.erase("status");
+    return this->sendResponse(false);
+  }
+
+  res.erase("status");
 
   // compare given password with stored in db
+  if (!keyExists(body, "password"))
+    return this->sendResponse(false, {{"error", "invalid body arguments"}});
 
+  std::string password = body["password"];
   // if comparison failed
   // send failure response
+  if (!verifyPassword(password, res["data"]["password"]))
+    return this->sendResponse(false, {{"error", "wrong current password"}});
 
   // if success
   // delete user
+  res = DBWorker::instance()->performOperation(constants::db::DELETE_USER, {{"id", id}});
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+
+  res.erase("status");
+
   // send success response
+  return this->sendResponse(true, {{"message", "user was successfully deleted"}});
 }
 
 int RequestHandler::getTasks()
