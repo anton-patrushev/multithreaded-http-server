@@ -60,7 +60,7 @@ int DBWorker::init()
 
   query = "CREATE TABLE TASKS("
           "ID        INTEGER PRIMARY KEY NOT NULL,"
-          "USER_ID   INTEGER             NOT NULL,"
+          "USER      INTEGER             NOT NULL,"
           "TASK      TEXT                NOT NULL)";
 
   status = sqlite3_exec(this->_db, query.c_str(), NULL, 0, &messageError);
@@ -83,31 +83,53 @@ int DBWorker::closedb()
 
 json DBWorker::performOperation(int operationType, json content)
 {
-  if (operationType == constants::db::GET_USER)
-    return this->getUser(content);
+  this->enterDbSection();
 
-  if (operationType == constants::db::CREATE_USER)
-    return this->createUser(content);
+  json result;
+  switch (operationType)
+  {
+  case constants::db::GET_USER:
+    result = this->getUser(content);
+    break;
 
-  if (operationType == constants::db::UPDATE_USER)
-    return this->updateUser(content);
+  case constants::db::CREATE_USER:
+    result = this->createUser(content);
+    break;
 
-  if (operationType == constants::db::DELETE_USER)
-    return this->deleteUser(content);
+  case constants::db::UPDATE_USER:
+    result = this->updateUser(content);
+    break;
 
-  if (operationType == constants::db::GET_TASKS)
-    return this->getTasks(content);
+  case constants::db::DELETE_USER:
+    result = this->deleteUser(content);
+    break;
 
-  if (operationType == constants::db::CREATE_TASK)
-    return this->createTask(content);
+  case constants::db::GET_TASKS:
+    result = this->getTasks(content);
+    break;
 
-  if (operationType == constants::db::UPDATE_TASK)
-    return this->updateTask(content);
+  case constants::db::GET_TASK_BY_ID:
+    result = this->getTaskById(content);
+    break;
 
-  if (operationType == constants::db::DELETE_TASK)
-    return this->deleteTask(content);
+  case constants::db::CREATE_TASK:
+    result = this->createTask(content);
+    break;
 
-  return nullptr;
+  case constants::db::UPDATE_TASK:
+    result = this->updateTask(content);
+    break;
+
+  case constants::db::DELETE_TASK:
+    result = this->deleteTask(content);
+    break;
+
+  default:
+    break;
+  }
+
+  this->leaveDbSection();
+  return result;
 };
 
 json DBWorker::createUser(json content)
@@ -115,12 +137,9 @@ json DBWorker::createUser(json content)
   std::string email = content["email"];
   std::string password = content["password"];
 
-  std::hash<std::string> hash;
-  std::string result = std::to_string(hash(password + constants::db::salt));
-
   std::string query = "INSERT INTO USERS (EMAIL, PASSWORD)"
                       "VALUES('" +
-                      email + "', '" + result + "');";
+                      email + "', '" + password + "');";
 
   char *messageError = NULL;
   int status = sqlite3_exec(this->_db, query.c_str(), NULL, 0, &messageError);
@@ -154,8 +173,19 @@ json DBWorker::createUser(json content)
 
 json DBWorker::getUser(json content)
 {
-  std::string email = content["email"];
-  std::string query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
+  std::string query;
+  if (keyExists(content, "id"))
+  {
+    std::string id = content["id"];
+    query = "SELECT * FROM USERS WHERE ID = '" + id + "';";
+  }
+  else if (keyExists(content, "email"))
+  {
+    std::string email = content["email"];
+    query = "SELECT * FROM USERS WHERE EMAIL = '" + email + "';";
+  }
+  else
+    return {{"status", "error"}};
 
   char *messageError = NULL;
   json res;
@@ -171,13 +201,189 @@ json DBWorker::getUser(json content)
   return res;
 };
 
-json DBWorker::deleteUser(json content) { return nullptr; };
-json DBWorker::updateUser(json content) { return nullptr; };
+json DBWorker::deleteUser(json content)
+{
+  if (!keyExists(content, "id"))
+    return {{"status", "error"}};
 
-json DBWorker::createTask(json content) { return nullptr; };
-json DBWorker::getTasks(json content) { return nullptr; };
-json DBWorker::deleteTask(json content) { return nullptr; };
-json DBWorker::updateTask(json content) { return nullptr; };
+  std::string id = content["id"];
+  std::string query = "DELETE FROM USERS WHERE ID = '" + id + "';";
+
+  char *messageError = NULL;
+  json res;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  query = "DELETE FROM TASKS WHERE USER = '" + id + "';";
+  status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  return res;
+};
+
+json DBWorker::updateUser(json content)
+{
+  std::string id = content["id"];
+  std::string newPassword = content["newPassword"];
+
+  std::string query = "UPDATE USERS SET PASSWORD = '" + newPassword + "' WHERE ID = '" + id + "';";
+
+  char *messageError = NULL;
+  json res;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  return res;
+};
+
+json DBWorker::createTask(json content)
+{
+  std::string userId = content["userId"];
+  std::string task = content["task"];
+
+  std::string query = "INSERT INTO TASKS (USER, TASK)"
+                      "VALUES('" +
+                      userId + "', '" + task + "');";
+
+  char *messageError = NULL;
+  int status = sqlite3_exec(this->_db, query.c_str(), NULL, 0, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+  int lastID = sqlite3_last_insert_rowid(this->_db);
+
+  query = "SELECT * FROM TASKS WHERE ID = '" + std::to_string(lastID) + "';";
+
+  json res;
+  messageError = NULL;
+  status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  // std::cout << "createUser res -> " << res << std::endl;
+
+  return res;
+};
+
+json DBWorker::getTasks(json content)
+{
+  std::string userId = content["userId"];
+  std::string query = "SELECT * FROM TASKS WHERE USER = '" + userId + "';";
+
+  json res;
+  res["data"] = json::array();
+  char *messageError = NULL;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  // std::cout << "createUser res -> " << res << std::endl;
+
+  return res;
+};
+
+json DBWorker::getTaskById(json content)
+{
+  std::string id = content["id"];
+  std::string query;
+  if (keyExists(content, "userId"))
+  {
+    std::string userId = content["userId"];
+    query = "SELECT * FROM TASKS WHERE ID = '" + id + "' AND USER = '" + userId + "';";
+  }
+  else
+  {
+    query = "SELECT * FROM TASKS WHERE ID = '" + id + "';";
+  }
+
+  json res;
+  char *messageError = NULL;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  return res;
+};
+
+json DBWorker::deleteTask(json content)
+{
+  std::string id = content["id"];
+  std::string query = "DELETE FROM TASKS WHERE ID = '" + id + "';";
+
+  json res;
+  char *messageError = NULL;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  // std::cout << "createUser res -> " << res << std::endl;
+
+  return res;
+};
+
+json DBWorker::updateTask(json content)
+{
+  std::string id = content["id"];
+  std::string task = content["task"];
+  std::string query = "UPDATE TASKS SET TASK = '" + task + "' WHERE ID = '" + id + "';";
+
+  json res;
+  char *messageError = NULL;
+  int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
+
+  if (status != SQLITE_OK)
+  {
+    std::string error = messageError;
+    sqlite3_free(messageError);
+    return {{"status", "error"}, {"message", error}};
+  }
+
+  // std::cout << "createUser res -> " << res << std::endl;
+
+  return res;
+};
 
 int DBWorker::sqlCallback(void *data, int columns, char **fields, char **columnNames)
 {
@@ -190,7 +396,7 @@ int DBWorker::sqlCallback(void *data, int columns, char **fields, char **columnN
     std::string name(columnNames[i]);
 
     // property to lower case
-    DBWorker::toLowerCase(name);
+    toLowerCase(name);
     localResult[name.c_str()] = field;
   }
 
@@ -206,21 +412,5 @@ int DBWorker::sqlCallback(void *data, int columns, char **fields, char **columnN
   return 0;
 }
 
-void DBWorker::toLowerCase(std::string &src)
-{
-  std::transform(src.begin(), src.end(), src.begin(), [](unsigned char c) { return std::tolower(c); });
-}
-
-// std::string query = "SELECT * FROM USERS";
-// char *messageError = NULL;
-// json res;
-// res["data"] = {};
-// int status = sqlite3_exec(this->_db, query.c_str(), (this->sqlCallback), &res, &messageError);
-
-// std::cout << "json res -> " << res << std::endl;
-// if (status != SQLITE_OK)
-// {
-//   std::string error = messageError;
-//   sqlite3_free(messageError);
-//   return {{"status", "error"}, {"message", error}};
-// }
+void DBWorker::enterDbSection() { this->_dbMutex.lock(); }
+void DBWorker::leaveDbSection() { this->_dbMutex.unlock(); }

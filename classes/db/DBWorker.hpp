@@ -6,6 +6,7 @@
 #include <iostream>
 #include <filesystem>
 #include <memory>
+#include <mutex>
 
 #include "../../helpers/sqlite3.h"
 #include "../../helpers/json.hpp"
@@ -16,6 +17,7 @@ using json = nlohmann::json;
 
 class DBWorker
 {
+  std::mutex _dbMutex;
   std::string _name;
   sqlite3 *_db;
 
@@ -32,13 +34,19 @@ class DBWorker
 
   json createTask(json content);
   json getTasks(json content);
+  json getTaskById(json content);
   json deleteTask(json content);
   json updateTask(json content);
 
+  // private constructor
   DBWorker();
 
+  // callback for sql SELECT
   static int sqlCallback(void *, int columns, char **fields, char **columnNames);
-  static void toLowerCase(std::string &src);
+
+  // for db operation
+  void enterDbSection();
+  void leaveDbSection();
 
 public:
   DBWorker(DBWorker const &) = delete;

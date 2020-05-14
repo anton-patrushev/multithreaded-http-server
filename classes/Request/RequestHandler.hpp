@@ -24,17 +24,10 @@
 #include "./RequestParser.hpp"
 
 // helpers
-#include "../../helpers/json.hpp" //C++ JSON
+#include "../../helpers/json.hpp"
 #include "../../helpers/constants.hpp"
 #include "../../helpers/helpers.hpp"
-
-#define NOMINMAX
-#undef max
-#undef min
-#include "jwt-cpp/jwt.h"
-
-// #include "../../../../jwt-cpp/src/include/jwt/hmacvalidator.h"
-//#include "../../helpers/helpers.hpp"
+#include "../../helpers/jwt.hpp"
 
 using json = nlohmann::json;
 
@@ -50,13 +43,20 @@ class RequestHandler
   void enterPrintSection();
   void leavePrintSection();
 
+  // for any routes
   int defaultHandler();
+
+  // user routes
   int loginUser();
   int registerUser();
+  int updateUser();
+  int deleteUser();
+
+  // task routes
   int getTasks();
   int createTask();
   int updateTask();
-  int deleteTasks();
+  int deleteTask();
 
   int sendResponse(bool success);
   int sendResponse(bool success, json res);
