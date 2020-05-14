@@ -56,7 +56,7 @@ class RequestHandler
   int getTasks();
   int createTask();
   int updateTask();
-  int deleteTasks();
+  int deleteTask();
 
   int sendResponse(bool success);
   int sendResponse(bool success, json res);

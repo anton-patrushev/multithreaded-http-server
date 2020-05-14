@@ -114,6 +114,9 @@ void RequestParser::parseQueryString()
   if (this->_queryString.find('=') == std::string::npos)
     return;
 
+  if (!verifyQueryString(this->_queryString, std::regex("^\\?([\\w-]+(=[\\w-]*)?(&[\\w-]+(=[\\w-]*)?)*)?$", std::regex_constants::ECMAScript)))
+    return;
+
   this->_queryParams = json::parse(this->formatQueryString());
 }
 

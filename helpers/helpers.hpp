@@ -23,6 +23,19 @@ static std::string findFirstMatch(std::string str, std::regex regex)
   return matches[0];
 }
 
+static bool verifyQueryString(std::string query, std::regex regex)
+{
+  std::smatch matches;
+  std::regex_search(query, matches, regex);
+
+  while (!matches.ready())
+  {
+    //waiting until matches full filled and established
+  }
+
+  return matches.size() != 0;
+}
+
 static void toLowerCase(std::string &src)
 {
   std::transform(src.begin(), src.end(), src.begin(), [](unsigned char c) { return std::tolower(c); });

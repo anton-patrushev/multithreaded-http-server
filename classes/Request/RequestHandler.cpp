@@ -25,38 +25,44 @@ void RequestHandler::leavePrintSection() { LeaveCriticalSection(this->_printingS
 
 int RequestHandler::handleRequest()
 {
+  try
+  {
+    if (this->_key == constants::routes::login)
+      return this->loginUser();
 
-  if (this->_key == constants::routes::login)
-    return this->loginUser();
+    if (this->_key == constants::routes::signUp)
+      return this->registerUser();
 
-  if (this->_key == constants::routes::signUp)
-    return this->registerUser();
+    if (this->_key == constants::routes::updateUser)
+      return this->updateUser();
 
-  if (this->_key == constants::routes::updateUser)
-    return this->updateUser();
+    if (this->_key == constants::routes::deleteUser)
+      return this->deleteUser();
 
-  if (this->_key == constants::routes::deleteUser)
-    return this->deleteUser();
+    if (this->_key == constants::routes::getTasks)
+      return this->getTasks();
 
-  if (this->_key == constants::routes::getTasks)
-    return this->getTasks();
+    if (this->_key == constants::routes::createTask)
+      return this->createTask();
 
-  if (this->_key == constants::routes::createTask)
-    return this->createTask();
+    if (this->_key == constants::routes::updateTask)
+      return this->updateTask();
 
-  if (this->_key == constants::routes::updateTask)
-    return this->updateTask();
+    if (this->_key == constants::routes::deleteTasks)
+      return this->deleteTask();
 
-  if (this->_key == constants::routes::deleteTasks)
-    return this->deleteTasks();
-
-  return this->defaultHandler();
+    return this->defaultHandler();
+  }
+  catch (...)
+  {
+    return this->sendResponse(false, {{"message", "something went wrong ..."}});
+  }
 };
 
 int RequestHandler::defaultHandler()
 {
   // TO-DO: create info message
-  return this->sendResponse(false);
+  return this->sendResponse(false, {{"message", "invalid route"}});
 }
 
 int RequestHandler::sendResponse(bool success)
@@ -113,10 +119,6 @@ int RequestHandler::loginUser()
   if (keyExists(searchResult, "data") && searchResult["data"].is_object() && keyExists(searchResult["data"], "id"))
     res["id"] = searchResult["data"]["id"];
 
-  this->enterPrintSection();
-  std::cout << "res -> " << res << std::endl;
-  this->leavePrintSection();
-
   if (res["status"] == "error")
   {
     res.erase("status");
@@ -156,10 +158,6 @@ int RequestHandler::registerUser()
 
   std::string hashedPassword = hashPassword(password);
   json res = DBWorker::instance()->performOperation(constants::db::CREATE_USER, {{"email", email}, {"password", hashedPassword}});
-
-  this->enterPrintSection();
-  std::cout << "res -> " << res << std::endl;
-  this->leavePrintSection();
 
   if (res["status"] == "error")
   {
@@ -263,7 +261,7 @@ int RequestHandler::deleteUser()
   if (!keyExists(queryParams, "id"))
     return this->sendResponse(false, {{"error", "invalid query string parameters"}});
 
-  std::string queryId = queryParams["id"];
+  std::string id = queryParams["id"];
 
   // check auth header (token)
   if (!keyExists(headers, "Authorization"))
@@ -272,9 +270,9 @@ int RequestHandler::deleteUser()
   std::string token = headers["Authorization"];
 
   // parse token -> get user id
-  std::string id = jwtToken::parseToken(token);
+  std::string parsedTokenId = jwtToken::parseToken(token);
 
-  if (id.compare(queryId) != 0)
+  if (id.compare(parsedTokenId) != 0)
     return this->sendResponse(false, {{"message", "token id doesn't match id provided with query string"}});
 
   // get user by id
@@ -313,13 +311,36 @@ int RequestHandler::deleteUser()
   return this->sendResponse(true, {{"message", "user was successfully deleted"}});
 }
 
+// TO-DO - pagination
 int RequestHandler::getTasks()
 {
   this->enterPrintSection();
   std::cout << "get tasks handler" << std::endl;
   this->leavePrintSection();
 
-  return this->sendResponse(true);
+  // json queryParams = this->_parser.getQueryParams();
+  json headers = this->_parser.getHeaders();
+
+  // check auth header (token)
+  if (!keyExists(headers, "Authorization"))
+    return this->sendResponse(false, {{"error", "Authorization header is missed"}});
+
+  std::string token = headers["Authorization"];
+
+  // parse token -> get user id
+  std::string parsedTokenId = jwtToken::parseToken(token);
+
+  // get tasks
+  json res = DBWorker::instance()->performOperation(constants::db::GET_TASKS, {{"userId", parsedTokenId}});
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+  res.erase("status");
+
+  return this->sendResponse(true, res);
 }
 
 int RequestHandler::createTask()
@@ -328,7 +349,47 @@ int RequestHandler::createTask()
   std::cout << "create task handler" << std::endl;
   this->leavePrintSection();
 
-  return this->sendResponse(true);
+  json body = this->_parser.getBody();
+  json queryParams = this->_parser.getQueryParams();
+  json headers = this->_parser.getHeaders();
+
+  // get user id from query string
+  if (!keyExists(queryParams, "userId"))
+    return this->sendResponse(false, {{"error", "invalid query string parameters - 'userId' parameter was missed"}});
+
+  std::string userId = queryParams["userId"];
+
+  // check auth header (token)
+  if (!keyExists(headers, "Authorization"))
+    return this->sendResponse(false, {{"error", "Authorization header is missed"}});
+
+  std::string token = headers["Authorization"];
+
+  // parse token -> get user id
+  std::string parsedTokenId = jwtToken::parseToken(token);
+
+  // compare token and query string id
+  if (userId.compare(parsedTokenId) != 0)
+    return this->sendResponse(false, {{"message", "token id doesn't match id provided with query string"}});
+
+  // check body
+  if (!keyExists(body, "data"))
+    return this->sendResponse(false, {{"error", "Invalid body - 'data' property was missed"}});
+
+  std::string task = body["data"];
+
+  // create task
+  json res = DBWorker::instance()->performOperation(constants::db::CREATE_TASK, {{"userId", userId}, {"task", task}});
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+
+  res.erase("status");
+
+  return this->sendResponse(true, res);
 }
 
 int RequestHandler::updateTask()
@@ -337,14 +398,110 @@ int RequestHandler::updateTask()
   std::cout << "update task handler" << std::endl;
   this->leavePrintSection();
 
-  return this->sendResponse(true);
+  json queryParams = this->_parser.getQueryParams();
+  json body = this->_parser.getBody();
+  json headers = this->_parser.getHeaders();
+
+  // check query string (task-id)
+  if (!keyExists(queryParams, "id"))
+    return this->sendResponse(false, {{"error", "invalid query params - `id` parameter is missed"}});
+
+  std::string taskId = queryParams["id"];
+
+  // check query string (userId)
+  if (!keyExists(queryParams, "userId"))
+    return this->sendResponse(false, {{"error", "invalid query params - `userId` parameter is missed"}});
+
+  std::string userId = queryParams["userId"];
+
+  // check auth header (token)
+  if (!keyExists(headers, "Authorization"))
+    return this->sendResponse(false, {{"error", "Authorization header is missed"}});
+
+  std::string token = headers["Authorization"];
+
+  // parse token -> get user id
+  std::string parsedTokenId = jwtToken::parseToken(token);
+
+  if (userId.compare(parsedTokenId) != 0)
+    return this->sendResponse(false, {{"message", "token id doesn't match id provided with query string"}});
+
+  // check body
+  if (!keyExists(body, "data"))
+    return this->sendResponse(false, {{"error", "invalid body - 'data' property was missed"}});
+
+  std::string task = body["data"];
+
+  // get task by id
+  json searchResult = DBWorker::instance()->performOperation(constants::db::GET_TASK_BY_ID, {{"id", taskId}, {"userId", userId}});
+
+  if (searchResult.empty())
+    return this->sendResponse(false, {{"message", "task doesn't exist"}});
+
+  // update task
+  json res = DBWorker::instance()->performOperation(constants::db::UPDATE_TASK, {{"id", taskId}, {"task", task}});
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+  res.erase("status");
+
+  return this->sendResponse(true, {{"message", "task was successfully updated"}});
 }
 
-int RequestHandler::deleteTasks()
+int RequestHandler::deleteTask()
 {
   this->enterPrintSection();
   std::cout << "delete tasks handler" << std::endl;
   this->leavePrintSection();
 
-  return this->sendResponse(true);
+  json queryParams = this->_parser.getQueryParams();
+  json body = this->_parser.getBody();
+  json headers = this->_parser.getHeaders();
+
+  // check query string (userId)
+  if (!keyExists(queryParams, "userId"))
+    return this->sendResponse(false, {{"error", "invalid body arguments - 'userId' parameter was missed"}});
+
+  std::string userId = queryParams["userId"];
+
+  // check query string (task-id)
+  if (!keyExists(queryParams, "id"))
+    return this->sendResponse(false, {{"error", "invalid body arguments - 'id' parameter was missed"}});
+
+  std::string taskId = queryParams["id"];
+
+  // check auth header (token)
+  if (!keyExists(headers, "Authorization"))
+    return this->sendResponse(false, {{"error", "Authorization header is missed"}});
+
+  std::string token = headers["Authorization"];
+
+  // parse token -> get user id
+  std::string parsedTokenId = jwtToken::parseToken(token);
+
+  if (userId.compare(parsedTokenId) != 0)
+    return this->sendResponse(false, {{"message", "token id doesn't match id provided with query string"}});
+
+  // get task by id
+  json searchResult = DBWorker::instance()->performOperation(constants::db::GET_TASK_BY_ID, {{"id", taskId}, {"userId", userId}});
+
+  if (searchResult.empty())
+    return this->sendResponse(false, {{"message", "task doesn't exist"}});
+
+  // delete task
+  json res = DBWorker::instance()->performOperation(constants::db::DELETE_TASK, {{"id", taskId}});
+
+  std::cout << "res -> " << res << std::endl;
+
+  if (res["status"] == "error")
+  {
+    res.erase("status");
+    return this->sendResponse(false, res);
+  }
+  res.erase("status");
+
+  return this->sendResponse(true, {{"message", "task was successfully deleted"}});
 }
