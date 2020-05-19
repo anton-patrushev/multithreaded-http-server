@@ -126,10 +126,6 @@ void RequestParser::logRequest()
   std::cout << std::endl;
   std::cout << "Request ->" << std::endl;
 
-  // std::cout << "Raw Request ->" << std::endl;
-  // std::cout << this->_rawRequest << std::endl;
-  // std::cout << std::endl;
-
   std::cout << "HTTP METHOD -> " << this->getHttpMethod() << std::endl;
   std::cout << "full url -> \'" << this->_fullUrl << "\'" << std::endl;
   std::cout << "url -> \'" << this->_url << "\'" << std::endl;
